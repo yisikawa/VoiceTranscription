@@ -84,7 +84,7 @@ npm run dev
 ブラウザで以下のURLを開きます。
 
 ```
-http://localhost:5173
+http://localhost:5152
 ```
 
 ---

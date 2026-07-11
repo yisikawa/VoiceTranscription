@@ -1,16 +1,12 @@
 fastapi
 uvicorn[standard]
 python-multipart
-openai-whisper
 faster-whisper
 demucs
-moviepy
 ffmpeg-python
+imageio-ffmpeg
 soundfile
 pydantic
-pydantic-settings
-python-dotenv
-librosa
 numpy
 torch
 torchaudio

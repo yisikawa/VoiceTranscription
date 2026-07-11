@@ -1,12 +1,9 @@
 from pathlib import Path
 import logging
 import json
-import shutil
-import uuid
 from typing import Dict, Any
 
 from audio_processor import extract_audio, separate_vocals, transcribe_audio
-from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

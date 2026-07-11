@@ -2,10 +2,12 @@ from fastapi import FastAPI, UploadFile, File, HTTPException, BackgroundTasks
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from pydantic import BaseModel
+import json
 import logging
 import asyncio
 import uuid
-from typing import List
+from typing import List, Union
 
 from config import UPLOAD_DIR, ALLOWED_EXTENSIONS
 
@@ -28,6 +30,22 @@ app.add_middleware(
 )
 
 tasks = {}
+
+
+class SegmentIn(BaseModel):
+    id: Union[int, str]
+    start: float
+    end: float
+    text: str
+
+
+def get_task_dir(task_id: str) -> Path:
+    """task_id が UUID 形式であることを検証し、タスクディレクトリを返す。"""
+    try:
+        uuid.UUID(task_id)
+    except ValueError:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return UPLOAD_DIR / task_id
 
 
 @app.post("/upload")
@@ -77,26 +95,26 @@ async def get_task_status(task_id: str):
 
 @app.get("/audio/{task_id}/{filename}")
 async def get_audio_file(task_id: str, filename: str):
+    task_dir = get_task_dir(task_id)
     safe_name = Path(filename).name
-    file_path = (UPLOAD_DIR / task_id / safe_name).resolve()
+    file_path = (task_dir / safe_name).resolve()
     # パストラバーサル対策: UPLOAD_DIR 配下であることを確認
-    if not str(file_path).startswith(str(UPLOAD_DIR.resolve())):
-        raise HTTPException(status_code=400, detail="不正なファイルパスです")
+    if not file_path.is_relative_to(UPLOAD_DIR.resolve()):
+        raise HTTPException(status_code=404, detail="File not found")
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path)
 
 
 @app.post("/save/{task_id}")
-async def save_transcription(task_id: str, segments: List[dict]):
-    task_dir = UPLOAD_DIR / task_id
+async def save_transcription(task_id: str, segments: List[SegmentIn]):
+    task_dir = get_task_dir(task_id)
     if not task_dir.exists():
         raise HTTPException(status_code=404, detail="Task not found")
 
     result_json_path = task_dir / "transcription_corrected.json"
-    import json
     with open(result_json_path, "w", encoding="utf-8") as f:
-        json.dump(segments, f, ensure_ascii=False, indent=2)
+        json.dump([s.model_dump() for s in segments], f, ensure_ascii=False, indent=2)
 
     return {"status": "saved"}
 

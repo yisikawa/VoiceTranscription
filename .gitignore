@@ -42,3 +42,6 @@ backend/uploads/
 
 # Test audio files at repo root
 /*.wav
+
+# Local planning docs (superpowers plans, etc.)
+docs/

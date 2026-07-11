@@ -3,26 +3,9 @@ import { FileAudio, Clock, CheckCircle2, AlertCircle } from 'lucide-react';
 
 import { FileUpload } from './components/FileUpload';
 import { TranscriptionEditor } from './components/TranscriptionEditor';
-import { uploadFile, getTaskStatus, getAudioUrl } from './api';
-import type { TaskStatus } from './types';
-
-// Simple SRT generator for browser download
-const generateSRT = (segments: any[]) => {
-  const formatTime = (seconds: number) => {
-    const date = new Date(0);
-    date.setSeconds(seconds);
-    const time = date.toISOString().substr(11, 12).replace('.', ',');
-    return time;
-  };
-
-  return segments.map((seg, i) => {
-    return `${i + 1}\n${formatTime(seg.start)} --> ${formatTime(seg.end)}\n${seg.text}\n\n`;
-  }).join('');
-};
-
-const generateTXT = (segments: any[]) => {
-  return segments.map(seg => seg.text).join('\n');
-};
+import { generateSRT, generateTXT } from './utils/transcript';
+import { uploadFile, getTaskStatus, getAudioUrl, saveTranscription } from './api';
+import type { TaskStatus, Segment } from './types';
 
 function App() {
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -63,13 +46,21 @@ function App() {
     }
   };
 
-  const handleSave = (segments: any[]) => {
+  const handleSave = async (segments: Segment[]) => {
+    // サーバー側にも編集結果を保存（transcription_corrected.json）
+    if (taskId) {
+      try {
+        await saveTranscription(taskId, segments);
+      } catch (err) {
+        console.error('サーバーへの保存に失敗しました', err);
+      }
+    }
+
     const textContent = generateTXT(segments);
     const blob = new Blob([textContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    // Remove original extension if possible and append .txt
     const originalName = status?.result?.original_filename || 'transcript';
     const baseName = originalName.replace(/\.[^/.]+$/, "");
     a.download = `${baseName}.txt`;
@@ -79,15 +70,15 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handleExport = () => {
-    if (!status?.result?.transcription.segments) return;
-
-    const srtContent = generateSRT(status.result.transcription.segments);
+  const handleExport = (segments: Segment[]) => {
+    const srtContent = generateSRT(segments);
     const blob = new Blob([srtContent], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${status.result.original_filename || 'transcript'}.srt`;
+    const originalName = status?.result?.original_filename || 'transcript';
+    const baseName = originalName.replace(/\.[^/.]+$/, "");
+    a.download = `${baseName}.srt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

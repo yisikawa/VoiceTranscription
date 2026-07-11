@@ -2,13 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import { Play, Pause, Download, FileText, Music } from 'lucide-react';
 import type { Segment, TranscriptionResult } from '../types';
+import { formatClockTime } from '../utils/transcript';
 
 interface TranscriptionEditorProps {
     audioUrl: string;
     transcription: TranscriptionResult;
     fileName: string;
     onSave: (segments: Segment[]) => void;
-    onExport: (format: 'srt' | 'txt' | 'json') => void;
+    onExport: (segments: Segment[]) => void;
 }
 
 export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
@@ -163,7 +164,7 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
                             <FileText size={18} /> テキスト保存
                         </button>
                         <button
-                            onClick={() => onExport('srt')}
+                            onClick={() => onExport(segments)}
                             className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-secondary/80 transition-colors"
                         >
                             <Download size={18} /> SRT出力
@@ -171,7 +172,7 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
                     </div>
                 </div>
                 <div className="text-center text-sm text-muted-foreground mt-2">
-                    {formatTime(currentTime)}
+                    {formatClockTime(currentTime)}
                 </div>
             </div>
 
@@ -190,9 +191,9 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
                             className="flex items-center gap-2 mb-2 cursor-pointer text-xs font-mono text-muted-foreground hover:text-primary"
                             onClick={() => handleSegmentClick(segment.start)}
                         >
-                            <span className="bg-muted px-1.5 py-0.5 rounded">{formatTime(segment.start)}</span>
+                            <span className="bg-muted px-1.5 py-0.5 rounded">{formatClockTime(segment.start)}</span>
                             <span>→</span>
-                            <span className="bg-muted px-1.5 py-0.5 rounded">{formatTime(segment.end)}</span>
+                            <span className="bg-muted px-1.5 py-0.5 rounded">{formatClockTime(segment.end)}</span>
                         </div>
 
                         <textarea
@@ -207,10 +208,3 @@ export const TranscriptionEditor: React.FC<TranscriptionEditorProps> = ({
         </div>
     );
 };
-
-// Helper for HH:MM:SS
-function formatTime(seconds: number): string {
-    const date = new Date(0);
-    date.setSeconds(seconds);
-    return date.toISOString().substr(11, 8) + "." + Math.floor((seconds % 1) * 10).toString();
-}

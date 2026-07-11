@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { TaskStatus } from './types';
+import type { TaskStatus, Segment } from './types';
 
 const API_BASE_URL = 'http://localhost:8001';
 
@@ -19,6 +19,6 @@ export const getAudioUrl = (taskId: string, filename: string): string => {
     return `${API_BASE_URL}/audio/${taskId}/${filename}`;
 };
 
-export const saveTranscription = async (taskId: string, segments: any[]): Promise<void> => {
+export const saveTranscription = async (taskId: string, segments: Segment[]): Promise<void> => {
     await axios.post(`${API_BASE_URL}/save/${taskId}`, segments);
 };

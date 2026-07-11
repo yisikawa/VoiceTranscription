@@ -10,7 +10,7 @@
 | バックエンド | Python / FastAPI / Uvicorn |
 | 文字起こし | Faster-Whisper |
 | ボーカル分離 | Demucs |
-| 音声処理 | FFmpeg / librosa / soundfile |
+| 音声処理 | FFmpeg / soundfile |
 | フロントエンド | React / TypeScript / Vite |
 | スタイリング | Tailwind CSS |
 | 波形表示 | wavesurfer.js |
@@ -124,15 +124,38 @@ VoiceTranscription/
 │   ├── audio_processor.py # 音声処理（抽出・分離・文字起こし）
 │   ├── config.py          # 設定（モデル名・パスなど）
 │   ├── requirements.txt   # Python 依存パッケージ
+│   ├── requirements-dev.txt # テスト用依存パッケージ（pytest, httpx）
+│   ├── tests/             # pytest テスト（main.py の API 挙動を検証）
 │   └── uploads/           # アップロードファイル保存先（自動生成）
 ├── frontend/
 │   ├── src/
 │   │   ├── components/    # UIコンポーネント
+│   │   ├── utils/         # SRT/TXT生成・時刻整形などの純粋関数（vitest でテスト）
 │   │   ├── App.tsx        # メインアプリ
 │   │   └── api.ts         # バックエンドAPI呼び出し
 │   └── package.json
 ├── start.bat              # 起動スクリプト（Windows）
 └── README.md
+```
+
+---
+
+## テスト
+
+### バックエンド（pytest）
+
+```
+cd backend
+venv\Scripts\activate
+pip install -r requirements-dev.txt
+pytest tests/ -v
+```
+
+### フロントエンド（vitest）
+
+```
+cd frontend
+npm test
 ```
 
 ---

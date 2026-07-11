@@ -39,3 +39,6 @@ Thumbs.db
 backend/venv/
 backend/outputs/
 backend/uploads/
+
+# Test audio files at repo root
+/*.wav

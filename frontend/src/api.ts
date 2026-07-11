@@ -1,7 +1,10 @@
 import axios from 'axios';
 import type { TaskStatus, Segment } from './types';
 
-const API_BASE_URL = 'http://localhost:8001';
+// VITE_API_BASE_URL があればそれを使い、なければアクセス中のホストの 8001 番へ。
+// これにより LAN 上の別マシンから http://<サーバーIP>:5152 で開いても API が正しく届く。
+const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL ?? `http://${window.location.hostname}:8001`;
 
 export const uploadFile = async (file: File): Promise<string> => {
     const formData = new FormData();

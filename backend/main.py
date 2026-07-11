@@ -21,10 +21,8 @@ MAX_UPLOAD_SIZE = 200 * 1024 * 1024  # 200MB
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5152",
-        "http://192.168.111.10:5152",
-    ],
+    # フロントエンド(ポート5152)からのアクセスを localhost / プライベートIP で許可
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}):5152",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

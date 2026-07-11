@@ -87,6 +87,8 @@ npm run dev
 http://localhost:5152
 ```
 
+LAN 上の別マシンからは `http://<サーバーのIPアドレス>:5152` でアクセスできます（API の接続先は自動的に同じホストの 8001 番になります）。接続先を明示したい場合は `frontend/.env.local` に `VITE_API_BASE_URL=http://<サーバーIP>:8001` を設定してください。
+
 ---
 
 ## 使い方
@@ -107,8 +109,8 @@ http://localhost:5152
    - セグメントをクリックするとその位置から再生
    - テキストは直接編集可能
 5. 完了したら保存・エクスポート
-   - **テキスト保存（TXT）** — テキストファイルとしてダウンロード
-   - **SRT出力** — 字幕ファイルとしてダウンロード
+   - **テキスト保存（TXT）** — テキストファイルとしてダウンロード（編集結果はサーバー側の `transcription_corrected.json` にも保存されます）
+   - **SRT出力** — 編集後のテキストを字幕ファイルとしてダウンロード
 
 ---
 
@@ -151,7 +153,7 @@ VoiceTranscription/
 **起動しない場合**
 - Python仮想環境（venv）が作成されているか確認してください
 - `pip install -r requirements.txt` が完了しているか確認してください
-- FFmpegがPATHに通っているか確認してください（未インストールの場合は `pip install imageio-ffmpeg` で代替可能）
+- FFmpeg は `imageio-ffmpeg`（requirements.txt に含まれます）経由で自動解決されます。システムに FFmpeg をインストール済みの場合はそちらが優先されます
 
 **文字起こし精度が低い場合**
 - `backend/config.py` の `WHISPER_MODEL_NAME` を `base` から `large-v3` に変更すると精度が向上します（処理時間は増加）

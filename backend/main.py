@@ -6,6 +6,7 @@ from pydantic import BaseModel
 import json
 import logging
 import asyncio
+import shutil
 import uuid
 from typing import List, Union
 
@@ -56,19 +57,23 @@ async def upload_file(background_tasks: BackgroundTasks, file: UploadFile = File
     if suffix not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"対応していないファイル形式です: {suffix}")
 
-    # サイズチェック（レスポンス前に読み込む）
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_SIZE:
-        raise HTTPException(status_code=413, detail="ファイルサイズが200MBを超えています")
-
-    # レスポンス前に保存を完了させてからバックグラウンドへ渡す
     task_id = str(uuid.uuid4())
     task_dir = UPLOAD_DIR / task_id
     task_dir.mkdir(parents=True, exist_ok=True)
     temp_file_path = task_dir / safe_name
 
-    with open(temp_file_path, "wb") as buffer:
-        buffer.write(content)
+    # メモリに全量を載せず、チャンクで書き込みながらサイズ検査する
+    size = 0
+    try:
+        with open(temp_file_path, "wb") as buffer:
+            while chunk := await file.read(1024 * 1024):
+                size += len(chunk)
+                if size > MAX_UPLOAD_SIZE:
+                    raise HTTPException(status_code=413, detail="ファイルサイズが200MBを超えています")
+                buffer.write(chunk)
+    except HTTPException:
+        shutil.rmtree(task_dir, ignore_errors=True)
+        raise
 
     tasks[task_id] = {"status": "processing", "progress": 0}
     background_tasks.add_task(process_task, task_id, temp_file_path, task_dir)

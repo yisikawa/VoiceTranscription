@@ -57,3 +57,34 @@ class TestAudioEndpoint:
         task_id = _make_task_dir()
         res = client.get(f"/audio/{task_id}/nothing.wav")
         assert res.status_code == 404
+
+
+class TestUploadEndpoint:
+    @pytest.fixture(autouse=True)
+    def no_background_processing(self, monkeypatch):
+        # TestClient はレスポンス後に BackgroundTasks を同期実行するため、
+        # Whisper/Demucs がロードされないようダミーに差し替える。
+        async def _noop(*args, **kwargs):
+            pass
+        monkeypatch.setattr(main, "process_task", _noop)
+
+    def test_rejects_unknown_extension(self):
+        res = client.post("/upload", files={"file": ("evil.exe", b"MZ", "application/octet-stream")})
+        assert res.status_code == 400
+
+    def test_accepts_wav_and_saves_file(self):
+        res = client.post("/upload", files={"file": ("test.wav", b"RIFF" + b"\x00" * 100, "audio/wav")})
+        assert res.status_code == 200
+        body = res.json()
+        assert body["status"] == "processing"
+        saved = UPLOAD_DIR / body["task_id"] / "test.wav"
+        assert saved.exists()
+        assert saved.stat().st_size == 104
+
+    def test_oversize_returns_413_and_cleans_up(self, monkeypatch):
+        monkeypatch.setattr(main, "MAX_UPLOAD_SIZE", 10)
+        res = client.post("/upload", files={"file": ("big.wav", b"\x00" * 100, "audio/wav")})
+        assert res.status_code == 413
+        # 書きかけのタスクディレクトリが残っていないこと
+        for d in UPLOAD_DIR.iterdir():
+            assert not (d / "big.wav").exists()
